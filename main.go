@@ -27,6 +27,14 @@ func main() {
 	// 静态文件路由
 	r.Static("/assets", "D:\\repo\\self\\golang\\ThinkGo")
 
+	// 模板文件
+	r.LoadHtmlGlob("examples/templates/*")
+	r.Get("/html", func(c *engine.Context) {
+		c.Html(200, "index.html", map[string]string{
+			"Name": "Samuel",
+		})
+	})
+
 	fmt.Printf("server is start in port: %d\n", Port)
 	addr := fmt.Sprintf(":%d", Port)
 	r.Run(addr)

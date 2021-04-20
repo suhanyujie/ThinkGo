@@ -1,6 +1,7 @@
 package engine
 
 import (
+	"html/template"
 	"net/http"
 	"path"
 )
@@ -9,6 +10,8 @@ type Engine struct {
 	*RouterGroup
 	router *router
 	groups []*RouterGroup
+	htmlTemplates *template.Template
+	funcMap template.FuncMap
 }
 
 type HandlerFunc func(c *Context)
@@ -31,7 +34,7 @@ func (e *Engine) Run(addr string) {
 
 // 实现 http 下的 Handler interface
 func (e *Engine) ServeHTTP(w http.ResponseWriter, req *http.Request) {
-	c := newContext(w, req)
+	c := newContext(w, req, e)
 	e.router.handle(c)
 }
 
@@ -41,6 +44,14 @@ func (e *Engine) Get(pattern string, handler HandlerFunc) {
 
 func (e *Engine) Post(pattern string, handler HandlerFunc) {
 	e.router.Post(pattern, handler)
+}
+
+func (e *Engine) SetFuncMap(funcMap template.FuncMap) {
+	e.funcMap = funcMap
+}
+
+func (e *Engine) LoadHtmlGlob(pattern string) {
+	e.htmlTemplates = template.Must(template.New("").Funcs(e.funcMap).ParseGlob(pattern))
 }
 
 ///  group 路由分组

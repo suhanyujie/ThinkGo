@@ -19,15 +19,18 @@ type Context struct {
 	// 路由组
 	handlers []HandlerFunc
 	index    int
+	// engine
+	engine *Engine
 }
 
-func newContext(w http.ResponseWriter, req *http.Request) *Context {
+func newContext(w http.ResponseWriter, req *http.Request, engine *Engine) *Context {
 	return &Context{
 		Writer: w,
 		Req:    req,
 		Path:   req.URL.Path,
 		Method: req.Method,
 		index:  -1,
+		engine: engine,
 	}
 }
 
@@ -76,10 +79,17 @@ func (c *Context) Data(code int, data []byte) {
 	c.Writer.Write(data)
 }
 
-func (c *Context) Html(code int, html string) {
+func (c *Context) Html(code int, tplName string, data interface{} ) {
 	c.SetHeader("Content-Type", "text/html")
 	c.Status(code)
-	c.Writer.Write([]byte(html))
+	if err := c.engine.htmlTemplates.ExecuteTemplate(c.Writer, tplName, data); err != nil {
+		c.Fail(500, err.Error())
+	}
+}
+
+func (c *Context) Fail(code int, msg string) {
+	c.Status(code)
+	c.Writer.Write([]byte(msg))
 }
 
 func (c *Context) SetParam(key, value string) {
