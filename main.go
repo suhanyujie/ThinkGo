@@ -24,6 +24,9 @@ func main() {
 		c.Json(200, fmt.Sprintf("the route path is: /v2/projectList..."))
 	})
 
+	// 静态文件路由
+	r.Static("/assets", "D:\\repo\\self\\golang\\ThinkGo")
+
 	fmt.Printf("server is start in port: %d\n", Port)
 	addr := fmt.Sprintf(":%d", Port)
 	r.Run(addr)

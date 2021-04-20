@@ -2,6 +2,7 @@ package engine
 
 import (
 	"net/http"
+	"path"
 )
 
 type Engine struct {
@@ -42,7 +43,7 @@ func (e *Engine) Post(pattern string, handler HandlerFunc) {
 	e.router.Post(pattern, handler)
 }
 
-///  group
+///  group 路由分组
 
 func (rg *RouterGroup) Group(prefix string) *RouterGroup {
 	engine := rg.e
@@ -66,4 +67,26 @@ func (rg *RouterGroup) Get(partPattern string, handler HandlerFunc) {
 
 func (rg *RouterGroup) Post(partPattern string, handler HandlerFunc) {
 	rg.addRoute("POST", partPattern, handler)
+}
+
+// 静态文件服务
+// relativePath 参数仅用于路由匹配，不用于寻找文件。
+func (rg *RouterGroup) createStaticHandler(relativePath string, fs http.FileSystem) HandlerFunc {
+	absolutePath := path.Join(rg.prefix, relativePath)
+	// url 中以 absolutePath 开头的静态文件请求。
+	fileServer := http.StripPrefix(absolutePath, http.FileServer(fs))
+	return func(c *Context) {
+		file := c.GetParam("filepath")
+		if _, err := fs.Open(file); err != nil {
+			c.Status(http.StatusNotFound)
+			return
+		}
+		fileServer.ServeHTTP(c.Writer, c.Req)
+	}
+}
+
+func (rg *RouterGroup) Static(relativePath string, root string) {
+	handler := rg.createStaticHandler(relativePath, http.Dir(root))
+	urlPattern := path.Join(relativePath, "/*filepath")
+	rg.Get(urlPattern, handler)
 }
